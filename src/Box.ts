@@ -1,35 +1,25 @@
-import * as Three from 'three';
-import { SceneObject } from './SceneObject';
+import * as Three from "three";
+import { SceneObject } from "./SceneObject";
 
 export class Box extends SceneObject {
-  private dirty: boolean;
+  private dirty = false;
   private mesh: Three.Mesh;
+  private material: Three.MeshLambertMaterial;
+
+  private preLumColor: number;
+  private isLuminated = false;
 
   constructor(x = 0, y = 0, z = 0) {
     super();
-    const geometry = new Three.BoxGeometry(1, 1, 1);
-    const material = new Three.MeshBasicMaterial({
-      color: 0xff0000,
+    this.preLumColor = Math.random() * 0xffffff;
+    const geometry = new Three.BoxGeometry(1, 1, 3);
+    this.material = new Three.MeshLambertMaterial({
+      color: this.preLumColor,
     });
-    this.mesh = new Three.Mesh(geometry, material);
+    this.mesh = new Three.Mesh(geometry, this.material);
     this.mesh.position.set(x, y, z);
 
     this.dirty = true;
-  }
-
-  pauseAnimation() {
-    this.dirty = false;
-  }
-
-  resumeAnimation() {
-    this.dirty = true;
-  }
-
-  private animate(deltaTime: number): void {
-    const factor = 0.001 * deltaTime;
-    this.mesh.rotation.x += factor;
-    this.mesh.rotation.y += factor;
-    this.mesh.rotation.z += factor;
   }
 
   get id(): number {
@@ -40,11 +30,26 @@ export class Box extends SceneObject {
     return this.dirty;
   }
 
+  get isFocusable(): boolean {
+    return true;
+  }
+
   asObject3D(): Three.Object3D {
     return this.mesh;
   }
 
-  render(deltaTime: number): void {
-    this.animate(deltaTime);
+  luminate(): void {
+    if (this.isLuminated) return;
+    this.preLumColor = this.material.emissive.getHex();
+    this.material.emissive.setHex(0x555555);
+    this.isLuminated = true;
   }
+
+  deluminate(): void {
+    if (!this.isLuminated) return;
+    this.material.emissive.setHex(this.preLumColor);
+    this.isLuminated = false;
+  }
+
+  render(): void {}
 }
