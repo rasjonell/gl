@@ -2,7 +2,11 @@ import * as Three from "three";
 import { SceneObject } from "./SceneObject";
 import { Room } from "./Room";
 import { Camera } from "./Camera";
-import { Box } from "./Box";
+import { Desk } from "./Desk";
+import { Monitor } from "./Monitor";
+import { Keyboard } from "./Keyboard";
+import { IntersectedObject } from "./types";
+// import { Shelf } from "./Shelf";
 
 class MainScene {
   private camera: Camera;
@@ -74,10 +78,25 @@ class MainScene {
 
   private setupScene(): Three.Scene {
     const scene = new Three.Scene();
-    scene.background = new Three.Color(0xf0f0f0);
-    const light = new Three.HemisphereLight(0xffffff, 0x888888, 3);
-    light.position.set(0, 2, 0);
-    scene.add(light);
+    const ambLight = new Three.AmbientLight(0xf0f0f0, 1);
+    scene.add(ambLight);
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return scene;
+    }
+    canvas.width = 1;
+    canvas.height = 256;
+    const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+    gradient.addColorStop(0, "#4567b7");
+    gradient.addColorStop(1, "#6495ed");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1, 256);
+    const texture = new Three.CanvasTexture(canvas);
+    texture.minFilter = Three.LinearFilter;
+    scene.background = texture;
+
     return scene;
   }
 
@@ -99,18 +118,10 @@ class MainScene {
   }
 
   private registerIntersectionEvents(): void {
-    this.canvas.addEventListener("click", (e) => {
-      if (e.detail !== 2) return;
-
-      const intersectedObject = this.getIntersectedObject(e);
-
-      if (intersectedObject) {
-        this.camera.setFocusObject(intersectedObject.object3D, 1.5);
-      }
-    });
+    let intersectedObject: IntersectedObject = null;
 
     this.canvas.addEventListener("mousemove", (e) => {
-      const intersectedObject = this.getIntersectedObject(e);
+      intersectedObject = this.getIntersectedObject(e);
 
       if (
         intersectedObject &&
@@ -129,11 +140,17 @@ class MainScene {
         this.objects.get(fo.id)?.deluminate();
       }
     });
+
+    this.canvas.addEventListener("click", (e) => {
+      if (e.detail !== 2) return;
+
+      if (intersectedObject) {
+        this.camera.setFocusObject(intersectedObject.object3D, 1.5);
+      }
+    });
   }
 
-  private getIntersectedObject(
-    e: MouseEvent,
-  ): { object: SceneObject; object3D: Three.Object3D } | null {
+  private getIntersectedObject(e: MouseEvent): IntersectedObject {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const mouse = new Three.Vector2(
       ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -147,7 +164,14 @@ class MainScene {
       return null;
     }
 
-    const obj = this.objects.get(intersects[0].object.id);
+    let currentObject = intersects[0].object;
+    let obj: SceneObject | undefined;
+
+    while (currentObject && !obj) {
+      obj = this.objects.get(currentObject.id);
+      currentObject = currentObject.parent as Three.Object3D;
+    }
+
     if (!obj) {
       return null;
     }
@@ -173,10 +197,10 @@ class MainScene {
 
 const scene = new MainScene();
 
-scene.addObjectsToScene(
-  new Room(),
-  new Box(4.5, 0.6, 0),
-  new Box(-4.5, 0.6, 0),
-);
+scene.addObjectsToScene(new Room());
+
+new Desk(scene.addObjectsToScene.bind(scene));
+new Monitor(scene.addObjectsToScene.bind(scene));
+new Keyboard(scene.addObjectsToScene.bind(scene));
 
 scene.render();
