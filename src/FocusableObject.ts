@@ -70,6 +70,7 @@ export class FocusableObject extends SceneObject {
     objOpts: ObjectOptions = {
       scale: new Three.Vector3(1, 1, 1),
       position: new Three.Vector3(0, 0, 0),
+      rotation: new Three.Vector3(0, 0, 0),
     },
   ): Three.Object3D {
     const {
