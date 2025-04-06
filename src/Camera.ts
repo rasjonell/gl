@@ -8,8 +8,8 @@ export class Camera extends SceneObject {
   private controls: OrbitControls;
   private threeCamera: Three.PerspectiveCamera;
 
-  private startPosition = new Three.Vector3(-20, 15, 20);
-  private endPosition = new Three.Vector3(-2, 2, 10);
+  private startPosition = new Three.Vector3(5, 20, 20);
+  private endPosition = new Three.Vector3(-10, 7, 10);
   private shouldFadeIn = true;
 
   private zoomedId: number | null = null;
@@ -24,7 +24,9 @@ export class Camera extends SceneObject {
   ) {
     super();
     this.threeCamera = new Three.PerspectiveCamera(fov, aspect, near, far);
-    this.threeCamera.position.set(...this.startPosition.toArray());
+    this.threeCamera.position.x = this.startPosition.x;
+    this.threeCamera.position.y = this.startPosition.y;
+    this.threeCamera.position.z = this.startPosition.z;
     this.threeCamera.name = Camera.name;
 
     this.controls = this.setupControls(renderer);
@@ -49,9 +51,7 @@ export class Camera extends SceneObject {
       duration,
       startTime: performance.now(),
       startPosition: this.threeCamera.position.clone(),
-      endPosition: center
-        .clone()
-        .add(new Three.Vector3(center.x < 0 ? 2.5 : -2.5, 3, 0)),
+      endPosition: center.clone().add(new Three.Vector3(0, 3, 3)),
     };
     this.zoomedId = object.id;
   }
